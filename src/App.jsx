@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { MinusIcon } from '@heroicons/react/24/outline'
 import 'preline/preline'
 
 const generateLabel = (index) => {
@@ -83,6 +84,22 @@ function App() {
     setSummary(null)
   }
 
+  const renderResultBadge = (result, isWinner) => {
+    if (result?.isValid && result.unitPrice !== null) {
+      return (
+        <span
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold ${
+            isWinner ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+          }`}
+        >
+          {unitFormatter.format(result.unitPrice)} por unidad
+        </span>
+      )
+    }
+
+    return <span className="text-xs font-semibold text-slate-400">-</span>
+  }
+
   const handleCalculate = () => {
     const computedRows = rows.map((row, index) => {
       const quantityValue = toNumber(row.quantity)
@@ -145,24 +162,102 @@ function App() {
         </header>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="sm:hidden">
+            <div className="space-y-3 p-4">
+              {rows.map((row, index) => {
+                const result = getRowResult(row.id)
+                const isWinner = summary?.winnerId === row.id
+                const isDeleteDisabled = rows.length <= 2
+                const fallbackLabel = row.name?.trim() || generateLabel(index)
+
+                return (
+                  <div
+                    key={row.id}
+                    className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${
+                      isWinner ? 'ring-2 ring-emerald-100' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Producto
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={generateLabel(index)}
+                          value={row.name ?? ''}
+                          onChange={handleFieldChange(row.id, 'name')}
+                          className="hs-input mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-semibold text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveRow(row.id)}
+                        disabled={isDeleteDisabled}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-rose-200 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/40 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+                        aria-label={`Eliminar ${fallbackLabel}`}
+                      >
+                        <MinusIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Cantidad
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={row.quantity}
+                          onChange={handleFieldChange(row.id, 'quantity')}
+                          className="hs-input mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Precio
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={row.price}
+                          onChange={handleFieldChange(row.id, 'price')}
+                          className="hs-input mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Resultado
+                      </span>
+                      {renderResultBadge(result, isWinner)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="min-w-full divide-y divide-slate-200 text-left">
               <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
                 <tr>
                   <th scope="col" className="px-4 py-3">
-                    Producto
+                    Productos
                   </th>
                   <th scope="col" className="px-4 py-3">
-                    Cantidad
+                    Cantid
                   </th>
                   <th scope="col" className="px-4 py-3">
-                    Precio
+                    Precio 
                   </th>
                   <th scope="col" className="px-4 py-3">
                     Resultado
                   </th>
-                  <th scope="col" className="px-4 py-3">
-                    Acciones
+                  <th scope="col" className="w-12 px-3 py-3 text-center">
+                    <span className="sr-only">Eliminar</span>
                   </th>
                 </tr>
               </thead>
@@ -183,7 +278,7 @@ function App() {
                             placeholder={generateLabel(index)}
                             value={row.name ?? ''}
                             onChange={handleFieldChange(row.id, 'name')}
-                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-semibold text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                           />
                         </div>
                       </td>
@@ -195,7 +290,7 @@ function App() {
                             placeholder="0"
                             value={row.quantity}
                             onChange={handleFieldChange(row.id, 'quantity')}
-                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                           />
                         </div>
                       </td>
@@ -207,36 +302,25 @@ function App() {
                             placeholder="0"
                             value={row.price}
                             onChange={handleFieldChange(row.id, 'price')}
-                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                            className="hs-input w-full rounded-xl border border-slate-300 px-3 py-2 text-base font-medium text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                           />
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {result?.isValid && result.unitPrice !== null ? (
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold ${
-                              isWinner
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {unitFormatter.format(result.unitPrice)} por unidad
-                          </span>
-                        ) : (
-                          <span className="text-xs font-semibold text-slate-400">
-                            -
-                          </span>
-                        )}
+                        {renderResultBadge(result, isWinner)}
                       </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={handleRemoveRow(row.id)}
-                          disabled={isDeleteDisabled}
-                          className="hs-btn hs-btn-outline rounded-xl border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-600 transition duration-150 hover:border-rose-400 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/40 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
-                        >
-                          Eliminar
-                        </button>
+                      <td className="w-12 px-3 py-3">
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            onClick={handleRemoveRow(row.id)}
+                            disabled={isDeleteDisabled}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-rose-200 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/40 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+                            aria-label={`Eliminar ${row.name ?? generateLabel(index)}`}
+                          >
+                            <MinusIcon className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
